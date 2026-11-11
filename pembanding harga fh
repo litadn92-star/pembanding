@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pembanding Harga FH</title>
+<style>
+:root{--bg:#e9edf4;--card:#fff;--tx:#0e1a2b;--mu:#566177;--bd:#d3d9e4;--ac:#3730a3;--acx:#fff;--hl:#fde047;--hlx:#0e1a2b;--ok:#15803d;--er:#b91c1c;--wr:#a16207}
+@media(prefers-color-scheme:dark){:root{--bg:#0c1423;--card:#152036;--tx:#e8edf7;--mu:#93a0b8;--bd:#283653;--ac:#a5b4fc;--acx:#0c1423;--hl:#fde047;--hlx:#0e1a2b;--ok:#4ade80;--er:#f87171;--wr:#facc15}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 12px}
+h2{font-size:16px;margin:0 0 8px}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs button{flex:1}
+button,select,input,textarea{font:inherit;color:inherit}
+button{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;cursor:pointer;min-height:40px}
+button.on,button.pri{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+button.sm{min-height:32px;padding:3px 9px;font-size:14px}
+button.del{color:var(--er)}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--ac);outline-offset:1px}
+select,input,textarea{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;min-height:40px;width:100%}
+textarea{min-height:120px;font-family:ui-monospace,Consolas,monospace;font-size:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1 1 140px}
+.row>.auto{flex:0 0 auto}
+.mu{color:var(--mu);font-size:14px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.chips button{flex:0 0 auto;text-align:left;line-height:1.25}
+.chips small{display:block;color:inherit;opacity:.75}
+.best{background:var(--hl);color:var(--hlx);border-radius:10px;padding:14px;margin-bottom:14px}
+.best .big{font-size:40px;font-weight:800;line-height:1.1}
+.best .sell{margin-top:6px;font-weight:600}
+.item{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--bd)}
+.item:first-child{border-top:0}
+.item .nm{flex:1;min-width:0}
+.item .nm b{display:block;overflow-wrap:anywhere}
+.item .pr{font-size:20px;font-weight:700;white-space:nowrap}
+.item.top .pr{color:var(--ok)}
+.item.off{opacity:.55}
+.tag{font-size:13px;color:var(--wr)}
+.empty{text-align:center;padding:28px 12px}
+.pe{width:100px;flex:0 0 100px}
+.lbl{display:flex;gap:8px;align-items:center;margin:8px 0}
+.lbl input{width:auto;min-height:0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Pembanding harga FH</h1>
+<div class="tabs">
+  <button id="t1" class="on" onclick="tab(1)">Bandingkan</button>
+  <button id="t2" onclick="tab(2)">Kelola data</button>
+</div>
+
+<section id="v1"></section>
+
+<section id="v2" hidden>
+  <div class="card">
+    <h2>Tambah FH</h2>
+    <div class="row">
+      <input id="fn" placeholder="Nama grup FH" aria-label="Nama grup FH">
+      <input id="fa" placeholder="Kontak admin (opsional)" aria-label="Kontak admin">
+      <button class="pri auto" onclick="addFH()">Tambah FH</button>
+    </div>
+    <div id="fhl" class="chips"></div>
+  </div>
+
+  <div class="card">
+    <h2>Input harga dari pricelist FH</h2>
+    <select id="fsel" aria-label="Pilih FH" onchange="sel.fh=this.value;renderPT()"></select>
+    <p class="mu">Satu baris satu harga: <b>aplikasi, durasi, harga</b>. Contoh:<br>
+      Netflix, 1 hari, 3k<br>Netflix, 1 bulan, 30000<br>Disney+, 7, 12.000</p>
+    <textarea id="bulk" placeholder="Tempel pricelist di sini" aria-label="Daftar harga"></textarea>
+    <label class="lbl"><input type="checkbox" id="rep" checked> Ganti semua harga FH ini dengan daftar baru</label>
+    <div class="row">
+      <button class="pri" onclick="saveBulk()">Simpan harga</button>
+    </div>
+    <p id="msg" class="mu" role="status"></p>
+    <div id="pt"></div>
+  </div>
+
+  <div class="card">
+    <h2>Keuntungan jual</h2>
+    <div class="row">
+      <select id="mkt" aria-label="Jenis keuntungan" onchange="setMk()">
+        <option value="pct">Persen dari harga FH</option>
+        <option value="rp">Rupiah tetap</option>
+      </select>
+      <input id="mkv" type="number" min="0" aria-label="Nilai keuntungan" onchange="setMk()">
+    </div>
+    <p class="mu">Dipakai untuk saran harga jual ke buyer, dibulatkan ke atas per Rp500.</p>
+  </div>
+
+  <div class="card">
+    <h2>Cadangan data</h2>
+    <p class="mu">Data tersimpan di browser perangkat ini. Unduh cadangan untuk pindah HP atau berjaga-jaga.</p>
+    <div class="row">
+      <button onclick="exp()">Unduh cadangan</button>
+      <button onclick="$('#imp').click()">Pulihkan dari file</button>
+      <button class="del" onclick="wipe()">Hapus semua data</button>
+    </div>
+    <input id="imp" type="file" accept="application/json" hidden onchange="imp(this)">
+  </div>
+</section>
+</div>
+
+<script>
+const K='fhprice.v1';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rp=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
+const uid=()=>Math.random().toString(36).slice(2,9);
+const blank=()=>({fhs:[],prices:[],mk:{t:'pct',v:100}});
+let S=load();
+let sel={app:'',dur:0,hide:true,fh:''};
+
+function load(){try{const d=JSON.parse(localStorage.getItem(K));return d&&d.fhs&&d.prices?d:blank()}catch(e){return blank()}}
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+
+/* parsing */
+function pn(s){
+  s=String(s).toLowerCase().replace(/rp/g,'').trim();
+  const k=/(k|rb|ribu)$/.test(s);
+  s=s.replace(/(k|rb|ribu)$/,'').trim();
+  const v=k?parseFloat(s.replace(',','.'))*1000:parseInt(s.replace(/[.,\s]/g,''));
+  return isFinite(v)&&v>0?Math.round(v):NaN;
+}
+function pd(s){
+  s=String(s).toLowerCase();
+  const m=s.match(/\d+/),n=m?+m[0]:1;
+  return /bulan|bln|month/.test(s)?n*30:n;
+}
+const dl=d=>d%30===0?(d/30)+' bulan':d+' hari';
+const F=id=>S.fhs.find(f=>f.id===id);
+const apps=()=>[...new Set(S.prices.map(p=>p.app))].sort((a,b)=>a.localeCompare(b));
+function sell(c){
+  const x=S.mk.t==='pct'?c*(1+S.mk.v/100):c+S.mk.v;
+  return Math.ceil(x/500)*500;
+}
+function age(ts){
+  const d=Math.floor((Date.now()-ts)/864e5);
+  return d<=0?'hari ini':d+' hari lalu';
+}
+
+/* tabs */
+function tab(n){
+  $('#v1').hidden=n!==1;$('#v2').hidden=n!==2;
+  $('#t1').className=n===1?'on':'';$('#t2').className=n===2?'on':'';
+  n===1?renderCompare():renderManage();
+}
+
+/* compare */
+function renderCompare(){
+  const el=$('#v1');
+  const A=apps();
+  if(!A.length){
+    el.innerHTML='<div class="card empty"><p><b>Belum ada harga.</b></p><p class="mu">Tambahkan FH dan tempel pricelist-nya dulu.</p><button class="pri" onclick="tab(2)">Buka Kelola data</button></div>';
+    return;
+  }
+  if(!A.includes(sel.app))sel.app=A[0];
+  const ps=S.prices.filter(p=>p.app===sel.app&&F(p.fh));
+  const vis=p=>!sel.hide||p.ready;
+  const D=[...new Set(ps.map(p=>p.dur))].sort((a,b)=>a-b);
+  if(!D.includes(sel.dur))sel.dur=D[0];
+  const rows=ps.filter(p=>p.dur===sel.dur&&vis(p)).sort((a,b)=>a.price-b.price);
+  const best=rows[0];
+
+  let h='<div class="card"><div class="row"><select id="sa" aria-label="Aplikasi" onchange="sel.app=this.value;renderCompare()">'
+    +A.map(a=>`<option ${a===sel.app?'selected':''}>${esc(a)}</option>`).join('')+'</select>'
+    +`<label class="lbl auto"><input type="checkbox" ${sel.hide?'checked':''} onchange="sel.hide=this.checked;renderCompare()"> Sembunyikan stok kosong</label></div><div class="chips">`;
+  for(const d of D){
+    const m=ps.filter(p=>p.dur===d&&vis(p)).sort((a,b)=>a.price-b.price)[0];
+    h+=`<button class="${d===sel.dur?'on':''}" onclick="sel.dur=${d};renderCompare()">${dl(d)}<small>${m?'mulai '+rp(m.price):'kosong'}</small></button>`;
+  }
+  h+='</div></div>';
+
+  if(best){
+    const sp=sell(best.price);
+    h+=`<div class="best"><div>Termurah: ${esc(F(best.fh).name)}</div><div class="big">${rp(best.price)}</div>
+      <div class="sell">Saran jual ${rp(sp)} · untung ${rp(sp-best.price)}</div></div>`;
+  }else{
+    h+='<div class="card empty">Tidak ada FH dengan stok untuk pilihan ini.</div>';
+  }
+
+  h+='<div class="card">';
+  const all=ps.filter(p=>p.dur===sel.dur).sort((a,b)=>a.price-b.price);
+  for(const p of all){
+    if(!vis(p))continue;
+    const f=F(p.fh),old=Date.now()-p.ts>7*864e5;
+    h+=`<div class="item ${p===best?'top':''} ${p.ready?'':'off'}">
+      <div class="nm"><b>${esc(f.name)}</b>
+        <span class="mu">${esc(f.admin||'')}</span>
+        <span class="${old?'tag':'mu'}"> ${old?'Perlu dicek · ':''}diperbarui ${age(p.ts)}</span></div>
+      <div class="pr">${rp(p.price)}</div>
+      <button class="sm" onclick="flip('${p.id}')">${p.ready?'Ada':'Habis'}</button></div>`;
+  }
+  if(sel.hide){
+    const n=all.filter(p=>!p.ready).length;
+    if(n)h+=`<p class="mu">${n} FH disembunyikan karena stok kosong.</p>`;
+  }
+  h+='</div>';
+  el.innerHTML=h;
+}
+function flip(id){const p=S.prices.find(x=>x.id===id);p.ready=!p.ready;p.ts=Date.now();save();renderCompare()}
+
+/* manage */
+function renderManage(){
+  if(!S.fhs.find(f=>f.id===sel.fh))sel.fh=S.fhs[0]?S.fhs[0].id:'';
+  $('#fhl').innerHTML=S.fhs.length?S.fhs.map(f=>`<button class="sm del" aria-label="Hapus ${esc(f.name)}" onclick="delFH('${f.id}')">${esc(f.name)} ✕</button>`).join(''):'<span class="mu">Belum ada FH.</span>';
+  $('#fsel').innerHTML=S.fhs.length?S.fhs.map(f=>`<option value="${f.id}" ${f.id===sel.fh?'selected':''}>${esc(f.name)}</option>`).join(''):'<option value="">Tambah FH dulu</option>';
+  $('#mkt').value=S.mk.t;$('#mkv').value=S.mk.v;
+  renderPT();
+}
+function renderPT(){
+  const ps=S.prices.filter(p=>p.fh===sel.fh).sort((a,b)=>a.app.localeCompare(b.app)||a.dur-b.dur);
+  $('#pt').innerHTML=ps.length?ps.map(p=>`<div class="item">
+    <div class="nm"><b>${esc(p.app)}</b><span class="mu">${dl(p.dur)}</span></div>
+    <input class="pe" inputmode="numeric" value="${p.price}" aria-label="Harga ${esc(p.app)} ${dl(p.dur)}" onchange="setP('${p.id}',this.value)">
+    <button class="sm del" aria-label="Hapus harga" onclick="delP('${p.id}')">Hapus</button></div>`).join(''):'';
+}
+function addFH(){
+  const n=$('#fn').value.trim();
+  if(!n){$('#fn').focus();return}
+  const f={id:uid(),name:n,admin:$('#fa').value.trim()};
+  S.fhs.push(f);sel.fh=f.id;save();
+  $('#fn').value='';$('#fa').value='';renderManage();
+}
+function delFH(id){
+  const f=F(id);
+  if(!confirm('Hapus '+f.name+' beserta semua harganya?'))return;
+  S.fhs=S.fhs.filter(x=>x.id!==id);S.prices=S.prices.filter(p=>p.fh!==id);save();renderManage();
+}
+function saveBulk(){
+  if(!sel.fh){$('#msg').textContent='Tambah dan pilih FH dulu.';return}
+  const lines=$('#bulk').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const known=apps(),ok=[],bad=[];
+  for(const l of lines){
+    const c=l.split(/[,|\t;]/).map(x=>x.trim());
+    const price=c.length>=3?pn(c[2]):NaN;
+    if(c.length<3||!c[0]||isNaN(price)){bad.push(l);continue}
+    const app=known.find(a=>a.toLowerCase()===c[0].toLowerCase())||c[0];
+    known.push(app);
+    ok.push({app,dur:pd(c[1]),price});
+  }
+  if(!ok.length){$('#msg').textContent='Tidak ada baris yang terbaca. Pakai format: aplikasi, durasi, harga.';return}
+  if($('#rep').checked)S.prices=S.prices.filter(p=>p.fh!==sel.fh);
+  const now=Date.now();
+  for(const r of ok){
+    const ex=S.prices.find(p=>p.fh===sel.fh&&p.app===r.app&&p.dur===r.dur);
+    if(ex){ex.price=r.price;ex.ready=true;ex.ts=now}
+    else S.prices.push({id:uid(),fh:sel.fh,app:r.app,dur:r.dur,price:r.price,ready:true,ts:now});
+  }
+  save();$('#bulk').value='';
+  $('#msg').textContent=ok.length+' harga disimpan.'+(bad.length?' '+bad.length+' baris dilewati: '+bad.join(' / '):'');
+  renderPT();
+}
+function setP(id,v){
+  const n=pn(v),p=S.prices.find(x=>x.id===id);
+  if(isNaN(n)){renderPT();return}
+  p.price=n;p.ts=Date.now();save();renderPT();
+}
+function delP(id){S.prices=S.prices.filter(p=>p.id!==id);save();renderPT()}
+function setMk(){S.mk={t:$('#mkt').value,v:Math.max(0,parseFloat($('#mkv').value)||0)};save()}
+
+/* backup */
+function exp(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));
+  a.download='harga-fh-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+}
+function imp(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!Array.isArray(d.fhs)||!Array.isArray(d.prices))throw 0;
+      if(!confirm('Data sekarang akan diganti dengan isi file ini. Lanjutkan?'))return;
+      S=d;S.mk=S.mk||{t:'pct',v:100};save();renderManage();
+    }catch(e){alert('File tidak valid.')}
+  };
+  r.readAsText(f);inp.value='';
+}
+function wipe(){
+  if(!confirm('Hapus semua FH dan harga? Tindakan ini tidak bisa dibatalkan.'))return;
+  S=blank();save();renderManage();
+}
+
+renderCompare();
+</script>
+</body>
+</html>
